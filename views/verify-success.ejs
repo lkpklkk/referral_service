@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Referral Link Ready</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body class="page page--gradient">
+    <main class="card" aria-labelledby="verify-title">
+      <div class="badge badge--success">
+        <span aria-hidden="true">✅</span>
+        Email verified
+      </div>
+      <h1 id="verify-title">You're all set!</h1>
+      <p>
+        Share your personal link below to invite friends. Every verified friend
+        moves you closer to your reward.
+      </p>
+
+      <div class="link-box" id="referral-link"><%= referralLink %></div>
+
+      <div class="actions">
+        <button class="btn btn--primary" id="copy-link" type="button">
+          Copy referral link
+        </button>
+        <a class="btn btn--secondary" href="/" role="button"
+          >Back to main page</a
+        >
+      </div>
+
+      <section class="next-steps" aria-label="Sharing tips">
+        <strong>Next steps:</strong>
+        <ul>
+          <li>Paste the link into a text or email to friends.</li>
+          <li>Post it on your favorite snowboard community.</li>
+        </ul>
+      </section>
+    </main>
+
+    <script type="module">
+      const button = document.getElementById('copy-link');
+      const link = document.getElementById('referral-link').textContent.trim();
+
+      button.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(link);
+          button.textContent = 'Link copied!';
+          button.disabled = true;
+          setTimeout(() => {
+            button.textContent = 'Copy referral link';
+            button.disabled = false;
+          }, 2000);
+        } catch (error) {
+          console.error('Copy failed', error);
+          button.textContent = 'Copy manually instead';
+        }
+      });
+    </script>
+  </body>
+</html>

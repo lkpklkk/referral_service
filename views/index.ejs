@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Snowboard Survey Referral</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body class="page page--gradient">
+    <main class="card card--compact" aria-labelledby="landing-title">
+      <header class="card__header">
+        <span class="badge">🚀 Early access</span>
+        <h1 id="landing-title">Join the Snowboard Survey</h1>
+        <p>
+          Enter your email to verify and instantly receive a unique referral link
+          you can share with friends.
+        </p>
+      </header>
+
+      <form id="referral-form" method="post" action="/generate" class="form">
+        <label for="email">Email address</label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          required
+          placeholder="you@example.com"
+          autocomplete="email"
+        />
+        <button type="submit" class="btn btn--primary">Send verification link</button>
+      </form>
+
+      <p id="status" role="alert" aria-live="polite"></p>
+    </main>
+
+    <script>
+      const form = document.getElementById('referral-form');
+      const status = document.getElementById('status');
+
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        status.textContent = 'Sending…';
+
+        const formData = new FormData(form);
+        const response = await fetch('/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: formData.get('email') })
+        });
+
+        const result = await response.json().catch(() => ({ error: 'Unexpected error' }));
+        if (response.ok) {
+          status.textContent = result.message;
+          form.reset();
+        } else {
+          status.textContent = result.error || 'Unable to send link';
+        }
+      });
+    </script>
+  </body>
+</html>

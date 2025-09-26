@@ -1,0 +1,239 @@
+:root {
+  color-scheme: light;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+body {
+  margin: 0;
+  color: #0b1727;
+  background: #f3f6fb;
+}
+
+.page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(1.5rem, 4vw, 3.5rem);
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.page--gradient {
+  background: linear-gradient(120deg, #eff6ff, #e0f2fe);
+}
+
+.page--gradient::before,
+.page--gradient::after {
+  content: '';
+  position: absolute;
+  border-radius: 999px;
+  opacity: 0.35;
+  z-index: -1;
+  pointer-events: none;
+  transition: transform 0.4s ease;
+}
+
+.page--gradient::before {
+  width: clamp(18rem, 25vw, 28rem);
+  height: clamp(18rem, 25vw, 28rem);
+  background: radial-gradient(circle at top, rgba(59, 130, 246, 0.35), transparent 65%);
+  top: -8rem;
+  left: clamp(-12rem, -15vw, -6rem);
+}
+
+.page--gradient::after {
+  width: clamp(22rem, 30vw, 34rem);
+  height: clamp(22rem, 30vw, 34rem);
+  background: radial-gradient(circle at bottom, rgba(56, 189, 248, 0.3), transparent 60%);
+  bottom: clamp(-10rem, -12vw, -4rem);
+  right: clamp(-14rem, -18vw, -6rem);
+}
+
+.card {
+  background: #ffffff;
+  padding: clamp(2rem, 4vw, 2.85rem);
+  border-radius: 18px;
+  box-shadow: 0 30px 60px rgba(15, 41, 77, 0.12);
+  max-width: min(520px, 90vw);
+  width: 100%;
+  text-align: center;
+}
+
+.card--compact {
+  max-width: clamp(420px, 40vw, 520px);
+}
+
+.card__header p {
+  margin: 0.75rem 0 0;
+  line-height: 1.6;
+  color: #3b4a67;
+  font-size: clamp(0.95rem, 1vw, 1.05rem);
+}
+
+h1 {
+  margin: 0.75rem 0 0;
+  font-size: clamp(1.75rem, 4vw, 2.3rem);
+}
+
+p {
+  margin: 0;
+}
+
+.form {
+  display: grid;
+  gap: 0.85rem;
+  margin-top: 1.75rem;
+  text-align: left;
+}
+
+label {
+  font-weight: 600;
+}
+
+input[type='email'] {
+  padding: 0.85rem;
+  border-radius: 10px;
+  border: 1px solid #d3d8de;
+  font-size: 1rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+input[type='email']:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.9rem 1.1rem;
+  border-radius: 10px;
+  border: none;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.2s ease, background 0.2s ease;
+  text-decoration: none;
+}
+
+.btn--primary {
+  background: #2563eb;
+  color: #ffffff;
+  box-shadow: 0 12px 24px rgba(37, 99, 235, 0.25);
+}
+
+.btn--primary:hover,
+.btn--primary:focus-visible {
+  transform: translateY(-1px);
+  box-shadow: 0 18px 32px rgba(37, 99, 235, 0.35);
+}
+
+.btn--secondary {
+  background: #ffffff;
+  color: #1d4ed8;
+  border: 1px solid rgba(29, 78, 216, 0.2);
+}
+
+.btn--secondary:hover,
+.btn--secondary:focus-visible {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 24px rgba(148, 163, 184, 0.25);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  background: rgba(14, 165, 233, 0.12);
+  color: #0ea5e9;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.badge--success {
+  background: rgba(34, 197, 94, 0.12);
+  color: #16a34a;
+}
+
+.link-box {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
+  font-family: 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, Monaco,
+    Consolas, 'Liberation Mono', 'Courier New', monospace;
+  word-break: break-word;
+  margin-top: 1.5rem;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  margin-top: 1.75rem;
+}
+
+.next-steps {
+  text-align: left;
+  margin-top: 2rem;
+  padding: 1.5rem;
+  border-radius: 12px;
+  background: rgba(59, 130, 246, 0.08);
+  color: #1e3a8a;
+}
+
+.next-steps ul {
+  padding-left: 1.2rem;
+  margin: 0.75rem 0 0;
+  line-height: 1.6;
+}
+
+#status {
+  min-height: 1.5rem;
+  margin-top: 1.25rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+@media (min-width: 640px) {
+  .actions {
+    flex-direction: row;
+  }
+}
+
+@media (min-width: 1280px) {
+  body {
+    font-size: 18px;
+  }
+  .card {
+    max-width: 640px;
+    padding: clamp(2.5rem, 3vw, 3.5rem);
+    border-radius: 22px;
+  }
+  .badge {
+    font-size: 1.05rem;
+    padding: 0.45rem 1rem;
+  }
+  .link-box {
+    font-size: 1.1rem;
+    padding: 1.25rem;
+  }
+}
+
+@media (min-width: 1600px) {
+  .page--gradient::before {
+    transform: translate(-4rem, 2rem) scale(1.2);
+  }
+  .page--gradient::after {
+    transform: translate(3rem, -3rem) scale(1.25);
+  }
+  .card {
+    max-width: 720px;
+  }
+}
