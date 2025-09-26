@@ -11,7 +11,7 @@ const app = express();
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
-const db = new Database('db.sqlite');
+const db = new Database(process.env.DB_PATH || 'db.sqlite');
 
 // DB setup
 db.exec(`
@@ -96,7 +96,9 @@ app.get('/verify', (req, res) => {
   if (new Date(row.expires_at) < new Date())
     return res.status(400).send('Token expired!');
 
-  const existingUser = db.prepare('SELECT * FROM users WHERE email = ?').get(row.email);
+  const existingUser = db
+    .prepare('SELECT * FROM users WHERE email = ?')
+    .get(row.email);
   if (!existingUser) {
     const code = crypto.randomBytes(3).toString('hex').toUpperCase();
     db.prepare(
@@ -114,7 +116,9 @@ app.get('/verify', (req, res) => {
   const clickCount = user.clicked_count ?? 0;
 
   const formUrl = process.env.FORM_URL || '';
-  const baseUrl = (process.env.BASE_URL && process.env.BASE_URL.replace(/\/$/, '')) || `${req.protocol}://${req.get('host')}`;
+  const baseUrl =
+    (process.env.BASE_URL && process.env.BASE_URL.replace(/\/$/, '')) ||
+    `${req.protocol}://${req.get('host')}`;
   const referralLink = `${baseUrl}/r/${user.code}`;
 
   res.render('verify-success', {
@@ -129,13 +133,17 @@ app.get('/r/:code', (req, res) => {
   const { code } = req.params;
 
   const user = db
-    .prepare('SELECT email, clicked_count FROM users WHERE code = ? AND verified = 1')
+    .prepare(
+      'SELECT email, clicked_count FROM users WHERE code = ? AND verified = 1'
+    )
     .get(code);
   if (!user) {
     return res.status(404).send('Unknown referral code');
   }
 
-  db.prepare('UPDATE users SET clicked_count = COALESCE(clicked_count, 0) + 1 WHERE code = ?').run(code);
+  db.prepare(
+    'UPDATE users SET clicked_count = COALESCE(clicked_count, 0) + 1 WHERE code = ?'
+  ).run(code);
 
   const targetForm = process.env.FORM_URL;
   if (!targetForm) {
