@@ -30,6 +30,17 @@ CREATE TABLE IF NOT EXISTS tokens (
 );
 `);
 
+const ensureColumn = (table, column, definition) => {
+  const columns = db.prepare(`PRAGMA table_info(${table})`).all();
+  const exists = columns.some((col) => col.name === column);
+  if (!exists) {
+    db.prepare(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`).run();
+  }
+};
+
+ensureColumn('users', 'clicked_count', 'INTEGER DEFAULT 0');
+ensureColumn('users', 'submitted_count', 'INTEGER DEFAULT 0');
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -85,26 +96,60 @@ app.get('/verify', (req, res) => {
   if (new Date(row.expires_at) < new Date())
     return res.status(400).send('Token expired!');
 
-  let user = db.prepare('SELECT * FROM users WHERE email = ?').get(row.email);
-  if (!user) {
+  const existingUser = db.prepare('SELECT * FROM users WHERE email = ?').get(row.email);
+  if (!existingUser) {
     const code = crypto.randomBytes(3).toString('hex').toUpperCase();
     db.prepare(
       'INSERT INTO users (email, code, verified) VALUES (?, ?, 1)'
     ).run(row.email, code);
-    user = { email: row.email, code };
   } else {
     db.prepare('UPDATE users SET verified = 1 WHERE email = ?').run(row.email);
   }
 
-  const referralBase = process.env.FORM_URL || '';
-  const referralLink = referralBase
-    ? `${referralBase}?referral=${user.code}`
-    : `${user.code}`;
+  const user = db.prepare('SELECT * FROM users WHERE email = ?').get(row.email);
+  if (!user) {
+    return res.status(500).send('Unable to load referral data');
+  }
+
+  const clickCount = user.clicked_count ?? 0;
+
+  const formUrl = process.env.FORM_URL || '';
+  const baseUrl = (process.env.BASE_URL && process.env.BASE_URL.replace(/\/$/, '')) || `${req.protocol}://${req.get('host')}`;
+  const referralLink = `${baseUrl}/r/${user.code}`;
 
   res.render('verify-success', {
     referralLink,
     userCode: user.code,
+    formUrl,
+    clickCount,
   });
+});
+
+app.get('/r/:code', (req, res) => {
+  const { code } = req.params;
+
+  const user = db
+    .prepare('SELECT email, clicked_count FROM users WHERE code = ? AND verified = 1')
+    .get(code);
+  if (!user) {
+    return res.status(404).send('Unknown referral code');
+  }
+
+  db.prepare('UPDATE users SET clicked_count = COALESCE(clicked_count, 0) + 1 WHERE code = ?').run(code);
+
+  const targetForm = process.env.FORM_URL;
+  if (!targetForm) {
+    return res.redirect('/');
+  }
+
+  try {
+    const url = new URL(targetForm);
+    url.searchParams.set('referral', code);
+    return res.redirect(url.toString());
+  } catch (error) {
+    console.error('Invalid FORM_URL provided', error);
+    return res.redirect(targetForm);
+  }
 });
 
 app.listen(process.env.PORT || 3000, () => {

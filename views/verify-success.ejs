@@ -17,8 +17,17 @@
         Share your personal link below to invite friends. Every verified friend
         moves you closer to your reward.
       </p>
+      <% if (formUrl) { %>
+      <p class="subtext">
+        We'll track each click and then send them to <%= formUrl %>.
+      </p>
+      <% } %>
 
       <div class="link-box" id="referral-link"><%= referralLink %></div>
+      <p class="stat" aria-live="polite">
+        <strong><%= clickCount %></strong> <%= clickCount === 1 ? 'person has' :
+        'people have' %> clicked your link!
+      </p>
 
       <div class="actions">
         <button class="btn btn--primary" id="copy-link" type="button">
