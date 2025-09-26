@@ -41,6 +41,11 @@ const ensureColumn = (table, column, definition) => {
 ensureColumn('users', 'clicked_count', 'INTEGER DEFAULT 0');
 ensureColumn('users', 'submitted_count', 'INTEGER DEFAULT 0');
 
+app.use((req, _res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
+  next();
+});
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -53,10 +58,22 @@ app.get('/', (req, res) => {
 // Create transporter (Gmail app password or Brevo SMTP)
 const transporter = nodemailer.createTransport({
   service: 'gmail',
+  logger: true,
+  debug: true,
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
   },
+});
+
+transporter.on('log', (info) => {
+  if (info && info.type) {
+    console.log('Nodemailer log:', info);
+  }
+});
+
+transporter.on('error', (error) => {
+  console.error('Nodemailer error:', error);
 });
 
 // Generate verification token
