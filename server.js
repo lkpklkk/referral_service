@@ -98,7 +98,10 @@ app.post('/generate', (req, res) => {
     html: `<p>Click here to verify: <a href="${link}">${link}</a></p>`,
   });
 
-  res.json({ message: 'Check your inbox for verification link' });
+  res.json({
+    message:
+      'Check your inbox for the verification link—if it is not there in a minute, look in spam or promotions.'
+  });
 });
 
 // Verify token
@@ -144,6 +147,20 @@ app.get('/verify', (req, res) => {
     formUrl,
     clickCount,
   });
+});
+
+app.get('/survey', (req, res) => {
+  const targetForm = process.env.FORM_URL;
+  if (!targetForm) {
+    return res.status(503).send('Survey is not configured yet.');
+  }
+  try {
+    const url = new URL(targetForm);
+    return res.redirect(url.toString());
+  } catch (error) {
+    console.error('Invalid FORM_URL provided', error);
+    return res.redirect(targetForm);
+  }
 });
 
 app.get('/r/:code', (req, res) => {
