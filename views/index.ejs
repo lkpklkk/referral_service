@@ -12,8 +12,8 @@
         <span class="badge">🚀 Early access</span>
         <h1 id="landing-title">Join the Snowboard Survey</h1>
         <p>
-          Enter your email to verify and instantly receive a unique referral link
-          you can share with friends.
+          Enter your email to verify and instantly receive a unique referral
+          link you can share with friends.
         </p>
       </header>
 
@@ -27,7 +27,18 @@
           placeholder="you@example.com"
           autocomplete="email"
         />
-        <button type="submit" class="btn btn--primary">Send verification link</button>
+        <% if (availableLanguages && availableLanguages.length) { %>
+        <label for="survey-language">Survey language</label>
+        <select id="survey-language" name="surveyLanguage" required>
+          <option value="" disabled selected>Select a language</option>
+          <% availableLanguages.forEach((option) => { %>
+          <option value="<%= option.value %>"><%= option.label %></option>
+          <% }) %>
+        </select>
+        <% } %>
+        <button type="submit" class="btn btn--primary">
+          Send verification link
+        </button>
       </form>
 
       <p id="status" role="alert" aria-live="polite"></p>
@@ -42,13 +53,28 @@
         status.textContent = 'Sending…';
 
         const formData = new FormData(form);
+        const selectedLanguage = formData.get('surveyLanguage');
+        if (!selectedLanguage) {
+          status.textContent = 'Please select a survey language.';
+          const languageField = document.getElementById('survey-language');
+          if (languageField) {
+            languageField.focus();
+          }
+          return;
+        }
+
         const response = await fetch('/generate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: formData.get('email') })
+          body: JSON.stringify({
+            email: formData.get('email'),
+            surveyLanguage: selectedLanguage,
+          }),
         });
 
-        const result = await response.json().catch(() => ({ error: 'Unexpected error' }));
+        const result = await response
+          .json()
+          .catch(() => ({ error: 'Unexpected error' }));
         if (response.ok) {
           status.textContent = result.message;
           form.reset();

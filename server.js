@@ -40,6 +40,26 @@ const ensureColumn = (table, column, definition) => {
 
 ensureColumn('users', 'clicked_count', 'INTEGER DEFAULT 0');
 ensureColumn('users', 'submitted_count', 'INTEGER DEFAULT 0');
+ensureColumn('users', 'survey_language', 'TEXT');
+ensureColumn('tokens', 'survey_language', 'TEXT');
+
+const normalizeSurveyLanguage = (value) => {
+  if (value === 'chinese') return 'chinese';
+  if (value === 'english') return 'english';
+  return null;
+};
+
+const getSurveyUrls = () => {
+  const fallback = process.env.FORM_URL || '';
+  return {
+    english: process.env.FORM_URL_EN || fallback,
+    chinese:
+      process.env.FORM_URL_ZH ||
+      process.env.FORM_URL_CN ||
+      process.env.FORM_URL_CHINESE ||
+      '',
+  };
+};
 
 app.use((req, _res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
@@ -52,7 +72,20 @@ app.use(express.urlencoded({ extended: true }));
 // Serve static landing page
 app.use(express.static(path.join(__dirname, 'public')));
 app.get('/', (req, res) => {
-  res.render('index');
+  const urls = getSurveyUrls();
+  const availableLanguages = [
+    { value: 'chinese', label: '中文 (Chinese)', url: urls.chinese },
+    { value: 'english', label: 'English', url: urls.english },
+  ].filter((option) => option.url);
+
+  const optionsForView =
+    availableLanguages.length > 0
+      ? availableLanguages
+      : [{ value: 'english', label: 'English', url: urls.english || '' }];
+
+  res.render('index', {
+    availableLanguages: optionsForView,
+  });
 });
 
 // Create transporter (Gmail app password or Brevo SMTP)
@@ -81,15 +114,35 @@ app.post('/generate', (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ error: 'Email required' });
 
+  const surveyLanguage = normalizeSurveyLanguage(
+    (req.body.surveyLanguage || '').toString().toLowerCase()
+  );
+
+  if (!surveyLanguage) {
+    return res.status(400).json({ error: 'Please select a survey language.' });
+  }
+
+  const urls = getSurveyUrls();
+  const requestedUrl =
+    surveyLanguage === 'chinese' ? urls.chinese : urls.english;
+  if (!requestedUrl) {
+    return res
+      .status(503)
+      .json({ error: 'Selected survey language is not configured yet.' });
+  }
+
   const token = crypto.randomBytes(16).toString('hex');
   const expires = new Date(Date.now() + 15 * 60 * 1000).toISOString(); // 15 min
 
   db.prepare('DELETE FROM tokens WHERE email = ?').run(email);
   db.prepare(
-    'INSERT INTO tokens (email, token, expires_at) VALUES (?, ?, ?)'
-  ).run(email, token, expires);
+    'INSERT INTO tokens (email, token, expires_at, survey_language) VALUES (?, ?, ?, ?)'
+  ).run(email, token, expires, surveyLanguage);
 
-  const link = `${process.env.BASE_URL}/verify?token=${token}`;
+  const baseUrl =
+    (process.env.BASE_URL && process.env.BASE_URL.replace(/\/$/, '')) ||
+    `${req.protocol}://${req.get('host')}`;
+  const link = `${baseUrl}/verify?token=${token}`;
   transporter.sendMail({
     from: `"Snowboard Survey" <${process.env.SMTP_USER}>`,
     to: email,
@@ -100,7 +153,7 @@ app.post('/generate', (req, res) => {
 
   res.json({
     message:
-      'Check your inbox for the verification link—if it is not there in a minute, look in spam or promotions.'
+      'Check your inbox for the verification link—if it is not there in a minute, look in spam or promotions.',
   });
 });
 
@@ -110,11 +163,18 @@ app.get('/verify', (req, res) => {
   if (!token) return res.status(400).send('Missing token');
 
   const row = db
-    .prepare('SELECT email, expires_at FROM tokens WHERE token = ?')
+    .prepare(
+      'SELECT email, expires_at, survey_language FROM tokens WHERE token = ?'
+    )
     .get(token);
   if (!row) return res.status(400).send('Invalid token');
   if (new Date(row.expires_at) < new Date())
     return res.status(400).send('Token expired!');
+
+  const surveyLanguage =
+    normalizeSurveyLanguage(
+      (row.survey_language || '').toString().toLowerCase()
+    ) || 'english';
 
   const existingUser = db
     .prepare('SELECT * FROM users WHERE email = ?')
@@ -122,10 +182,12 @@ app.get('/verify', (req, res) => {
   if (!existingUser) {
     const code = crypto.randomBytes(3).toString('hex').toUpperCase();
     db.prepare(
-      'INSERT INTO users (email, code, verified) VALUES (?, ?, 1)'
-    ).run(row.email, code);
+      'INSERT INTO users (email, code, verified, survey_language) VALUES (?, ?, 1, ?)'
+    ).run(row.email, code, surveyLanguage);
   } else {
-    db.prepare('UPDATE users SET verified = 1 WHERE email = ?').run(row.email);
+    db.prepare(
+      'UPDATE users SET verified = 1, survey_language = ? WHERE email = ?'
+    ).run(surveyLanguage, row.email);
   }
 
   const user = db.prepare('SELECT * FROM users WHERE email = ?').get(row.email);
@@ -136,6 +198,16 @@ app.get('/verify', (req, res) => {
   const clickCount = user.clicked_count ?? 0;
 
   const formUrl = process.env.FORM_URL || '';
+  const urls = getSurveyUrls();
+  const userLanguage =
+    normalizeSurveyLanguage(
+      (user.survey_language || '').toString().toLowerCase()
+    ) || 'english';
+  const selectedSurveyUrl =
+    userLanguage === 'chinese'
+      ? urls.chinese || urls.english || formUrl
+      : urls.english || urls.chinese || formUrl;
+  const surveyLabel = userLanguage === 'chinese' ? 'Chinese' : 'English';
   const baseUrl =
     (process.env.BASE_URL && process.env.BASE_URL.replace(/\/$/, '')) ||
     `${req.protocol}://${req.get('host')}`;
@@ -145,12 +217,16 @@ app.get('/verify', (req, res) => {
     referralLink,
     userCode: user.code,
     formUrl,
+    surveyLabel,
+    selectedSurveyUrl,
+    surveyLanguage: userLanguage,
     clickCount,
   });
 });
 
 app.get('/survey', (req, res) => {
-  const targetForm = process.env.FORM_URL;
+  const urls = getSurveyUrls();
+  const targetForm = urls.english || urls.chinese || process.env.FORM_URL;
   if (!targetForm) {
     return res.status(503).send('Survey is not configured yet.');
   }
@@ -168,7 +244,7 @@ app.get('/r/:code', (req, res) => {
 
   const user = db
     .prepare(
-      'SELECT email, clicked_count FROM users WHERE code = ? AND verified = 1'
+      'SELECT email, clicked_count, survey_language FROM users WHERE code = ? AND verified = 1'
     )
     .get(code);
   if (!user) {
@@ -179,7 +255,15 @@ app.get('/r/:code', (req, res) => {
     'UPDATE users SET clicked_count = COALESCE(clicked_count, 0) + 1 WHERE code = ?'
   ).run(code);
 
-  const targetForm = process.env.FORM_URL;
+  const urls = getSurveyUrls();
+  const userLanguage =
+    normalizeSurveyLanguage(
+      (user.survey_language || '').toString().toLowerCase()
+    ) || 'english';
+  const targetForm =
+    userLanguage === 'chinese'
+      ? urls.chinese || urls.english || process.env.FORM_URL
+      : urls.english || urls.chinese || process.env.FORM_URL;
   if (!targetForm) {
     return res.redirect('/');
   }
