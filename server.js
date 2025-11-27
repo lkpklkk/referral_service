@@ -69,9 +69,17 @@ app.use((req, _res, next) => {
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve static landing page
+// Serve static files from React app
+app.use(express.static(path.join(__dirname, 'client/dist')));
+
+// Serve static files from public (for legacy support if needed, though React handles most)
 app.use(express.static(path.join(__dirname, 'public')));
+
 app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'client/dist/index.html'));
+});
+
+app.get('/referral', (req, res) => {
   const urls = getSurveyUrls();
   const availableLanguages = [
     { value: 'chinese', label: '中文 (Chinese)', url: urls.chinese },
@@ -83,7 +91,7 @@ app.get('/', (req, res) => {
       ? availableLanguages
       : [{ value: 'english', label: 'English', url: urls.english || '' }];
 
-  res.render('index', {
+  res.render('referral', {
     availableLanguages: optionsForView,
   });
 });

@@ -1,0 +1,253 @@
+#root {
+  width: 100%;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+.hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  margin-top: clamp(1rem, 6vw, 3rem);
+  text-align: center;
+}
+
+.version-badge {
+  position: absolute;
+  left: 0.75rem;
+  top: 0.75rem;
+  background: #ffe0bf;
+  color: #a84500;
+  font-weight: 700;
+  font-size: 0.85rem;
+  padding: 0.35rem 0.8rem;
+  border-radius: 10px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  z-index: 15;
+}
+
+.hero-title {
+  margin: 0;
+  color: #fff;
+  font-size: clamp(2rem, 6vw, 4.4rem);
+  font-weight: 900;
+  line-height: 1.05;
+  letter-spacing: -0.5px;
+  text-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+}
+
+.hero-line {
+  display: block;
+}
+
+.hero-highlight {
+  position: relative;
+  display: inline-block;
+  padding: 0.15em 0.35em;
+  background: transparent;
+  border-radius: 14px;
+  color: #fff;
+  box-shadow: none;
+  overflow: visible;
+  transition: background 0.3s ease, box-shadow 0.3s ease, color 0.3s ease;
+}
+
+.hero-highlight::after {
+  content: '';
+  position: absolute;
+  inset: -12px;
+  background: radial-gradient(
+      circle at 20% 20%,
+      rgba(255, 191, 94, 0.35),
+      transparent 55%
+    ),
+    radial-gradient(circle at 80% 60%, rgba(255, 128, 0, 0.35), transparent 55%);
+  filter: blur(16px);
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.hero-highlight:hover {
+  background: linear-gradient(
+    120deg,
+    rgba(255, 191, 94, 0.9),
+    rgba(255, 128, 0, 0.9)
+  );
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+  color: #2b1600;
+}
+
+.hero-highlight:hover::after {
+  opacity: 1;
+}
+
+.profile-image {
+  position: relative;
+  width: clamp(140px, 28vw, 220px);
+  height: clamp(170px, 32vw, 240px);
+  overflow: visible;
+  border: none;
+  background: transparent;
+}
+
+.profile-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.profile-img--base {
+  z-index: 1;
+}
+
+.profile-img--alt {
+  z-index: 2;
+}
+
+.glass-cards-container {
+  margin-top: clamp(1rem, 6vw, 3rem);
+  width: 100%;
+  max-width: 1100px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  justify-content: center;
+  align-items: stretch;
+}
+
+.action-card {
+  min-width: 200px;
+  max-width: 520px;
+  padding: 2rem 2.25rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.action-card h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.3rem;
+  color: #fff;
+}
+
+.action-card p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+@media (max-width: 768px) {
+  .hero {
+    margin-top: 1.25rem;
+    gap: 1rem;
+  }
+
+  .glass-cards-container {
+    margin-top: 1.5rem;
+  }
+
+  .action-card {
+    max-width: 90%;
+    padding: 1.25rem 1.35rem;
+    gap: 0.9rem;
+  }
+
+  .hero-highlight {
+    background: linear-gradient(
+      120deg,
+      rgba(255, 191, 94, 0.9),
+      rgba(255, 128, 0, 0.9)
+    );
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+    color: #2b1600;
+  }
+
+  .action-card {
+    padding: 1.25rem 1.35rem;
+    gap: 0.9rem;
+  }
+
+  .action-card h3 {
+    margin: 0 0 0.1rem;
+    font-size: 1.15rem;
+    color: #fff;
+  }
+
+  .action-card p {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.98rem;
+  }
+
+  .glass-cards-container {
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .main-content {
+    padding-top: 0.75rem;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    gap: 0.75rem;
+  }
+
+  .version-badge {
+    font-size: 0.72rem;
+    padding: 0.28rem 0.6rem;
+    left: 0.35rem;
+    top: 0.35rem;
+  }
+
+  .hero {
+    gap: 0.65rem;
+    margin-top: 0.35rem;
+  }
+
+  .hero-title {
+    font-size: clamp(1.55rem, 7.5vw, 2.4rem);
+    line-height: 1.03;
+  }
+
+  .hero-highlight {
+    padding: 0.08em 0.22em;
+    border-radius: 9px;
+  }
+
+  .profile-image {
+    width: clamp(110px, 32vw, 150px);
+  }
+
+  .glass-cards-container {
+    margin-top: 0.6rem;
+    gap: 0.65rem;
+  }
+
+  .action-card {
+    max-width: 100%;
+    padding: 0.9rem 1rem;
+    gap: 0.5rem;
+  }
+
+  .action-card h3 {
+    font-size: 1.05rem;
+  }
+
+  .action-card p {
+    font-size: 0.9rem;
+  }
+
+  .btn {
+    font-size: 0.92rem;
+    padding: 0.62rem 0.95rem;
+  }
+}
