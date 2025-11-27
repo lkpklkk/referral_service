@@ -11,10 +11,43 @@ const PARALLAX_FACTOR = 100;
 const NEAR_THRESHOLD = 0.65;
 const FAR_THRESHOLD = 0.25;
 
+const FORM_URL_EN = import.meta.env.VITE_FORM_URL || '';
+const FORM_URL_CN = import.meta.env.VITE_FORM_URL_CN || '';
+
+const translations = {
+  en: {
+    heroLine1: 'Better Techniques',
+    heroLine2: 'Equals',
+    heroLine3: '',
+    heroLine3Highlight: 'More Fun!',
+    surveyTitle: 'Survey & Referral',
+    surveyDesc: 'Fill out the survey to get the price, or refer a friend!',
+    surveyCta: 'Fill Survey',
+    referralCta: 'Referral',
+    bookTitle: 'Book a Lesson',
+    bookDesc: 'Ready to hit the slopes? Book your session now.',
+    bookCta: 'Book Now',
+    selectLabel: 'Language',
+  },
+  zh: {
+    heroLine1: '好的技术',
+    heroLine2: '等于',
+    heroLine3: '滑得',
+    heroLine3Highlight: '更开心！',
+    surveyTitle: '调查问卷',
+    surveyDesc: '有奖调查问卷，填写问卷或推荐好友即可中奖！',
+    surveyCta: '填写问卷',
+    referralCta: '推荐好友',
+    bookTitle: '预约课程',
+    bookDesc: '准备好突飞猛进？点击下方了解更多并预约课程。',
+    bookCta: '立即预约',
+    selectLabel: '语言',
+  },
+};
+
 function App() {
   const [stickers, setStickers] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-
   const [generatedStickers, setGeneratedStickers] = useState([]);
   const mainRef = useRef(null);
   const profileRef = useRef(null);
@@ -22,6 +55,14 @@ function App() {
   const [proximity, setProximity] = useState(0);
   const [isMobileView, setIsMobileView] = useState(false);
   const [altProfile, setAltProfile] = useState(false);
+  const [language, setLanguage] = useState('en');
+
+  const handleSurveyClick = () => {
+    const targetUrl = language === 'zh' ? FORM_URL_CN : FORM_URL_EN;
+    const fallback = '/survey';
+    const url = targetUrl || fallback;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
 
   useEffect(() => {
     // Load sticker data from CSV
@@ -39,6 +80,26 @@ function App() {
         });
       });
   }, []);
+
+  useEffect(() => {
+    const storedLang = localStorage.getItem('siteLanguage');
+    if (storedLang && translations[storedLang]) {
+      setLanguage(storedLang);
+      return;
+    }
+    const navLang = (navigator.language || navigator.userLanguage || 'en')
+      .toLowerCase()
+      .slice(0, 2);
+    if (navLang === 'zh' || navLang === 'cn') {
+      setLanguage('zh');
+    } else {
+      setLanguage('en');
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('siteLanguage', language);
+  }, [language]);
 
   useEffect(() => {
     const handleResize = () => setIsMobileView(window.innerWidth <= 768);
@@ -143,8 +204,14 @@ function App() {
 
         while (attempts < 100 && !position) {
           // Keep away from edges (8% - 93%) to prevent clipping
-          const x = Math.random() * 100 - 5;
-          const y = Math.random() * 100 - 5;
+          var x, y;
+          if (isMobileLayout) {
+            x = Math.random() * 100 - 5;
+            y = Math.random() * 85 + 20;
+          } else {
+            x = Math.random() * 100 - 5;
+            y = Math.random() * 100 - 5;
+          }
 
           // 1. Check Safe Zone
           if (
@@ -212,7 +279,22 @@ function App() {
 
   return (
     <div className='app-container'>
-      <div className='version-badge'>v0.1</div>
+      <div className='ui-overlay'>
+        <div className='version-badge'>v0.1</div>
+        <div className='language-switcher'>
+          <label htmlFor='lang-select'>
+            {translations[language].selectLabel}:
+          </label>
+          <select
+            id='lang-select'
+            value={language}
+            onChange={(e) => setLanguage(e.target.value)}
+          >
+            <option value='en'>EN</option>
+            <option value='zh'>中文</option>
+          </select>
+        </div>
+      </div>
       {/* Background Stickers */}
       <div className='sticker-layer'>
         {generatedStickers.map((sticker, index) => (
@@ -233,9 +315,18 @@ function App() {
       <main className='main-content' ref={mainRef}>
         <section className='hero'>
           <h1 className='hero-title'>
-            <span className='hero-line'>Better Techniques</span>
-            <span className='hero-line '>Equals</span>
-            <span className='hero-line hero-highlight'>More Fun!</span>
+            <span className='hero-line'>
+              {translations[language].heroLine1}
+            </span>
+            <span className='hero-line '>
+              {translations[language].heroLine2}
+            </span>
+            <span className='hero-line'>
+              {translations[language].heroLine3 || ''}
+              <span className=' hero-line hero-highlight'>
+                {translations[language].heroLine3Highlight || ''}
+              </span>
+            </span>
           </h1>
           <div
             className='profile-image'
@@ -273,28 +364,28 @@ function App() {
         <div className='glass-cards-container'>
           {/* Survey Card */}
           <GlassCard className='action-card'>
-            <h3>Survey & Referral</h3>
-            <p>Fill out the survey to get the price, or refer a friend!</p>
+            <h3>{translations[language].surveyTitle}</h3>
+            <p>{translations[language].surveyDesc}</p>
             <div className='button-group'>
-              <a href='/survey' className='btn btn-primary'>
-                Fill Survey
-              </a>
+              <button onClick={handleSurveyClick} className='btn btn-primary'>
+                {translations[language].surveyCta}
+              </button>
               <a href='/referral' className='btn btn-secondary'>
-                Referral
+                {translations[language].referralCta}
               </a>
             </div>
           </GlassCard>
 
           {/* Booking Card */}
           <GlassCard className='action-card'>
-            <h3>Book a Lesson</h3>
-            <p>Ready to hit the slopes? Book your session now.</p>
+            <h3>{translations[language].bookTitle}</h3>
+            <p>{translations[language].bookDesc}</p>
             <div className='button-group'>
               <button
                 onClick={() => setIsModalOpen(true)}
                 className='btn btn-primary'
               >
-                Book Now
+                {translations[language].bookCta}
               </button>
             </div>
           </GlassCard>
