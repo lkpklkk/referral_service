@@ -14,7 +14,7 @@ const FAR_THRESHOLD = 0.25;
 
 const FORM_URL_EN = import.meta.env.VITE_FORM_URL || '';
 const FORM_URL_CN = import.meta.env.VITE_FORM_URL_CN || '';
-
+const BOOKING_LINK = import.meta.env.VITE_BOOKING_LINK || '';
 const translations = {
   en: {
     heroLine1: 'Better Techniques',
@@ -100,6 +100,12 @@ function App() {
     const targetUrl = language === 'zh' ? FORM_URL_CN : FORM_URL_EN;
     const fallback = '/survey';
     const url = targetUrl || fallback;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleBookingClick = () => {
+    const url = BOOKING_LINK || '#';
+    console.log('Booking URL:', url);
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
@@ -539,17 +545,12 @@ function App() {
             <h3>{translations[language].bookTitle}</h3>
             <p>{translations[language].bookDesc}</p>
             <div className='button-row'>
-              <a
-                href={process.env.PAY_BOOKING_LINK || '#'}
-                target='_blank'
-                rel='noopener noreferrer'
-                className='btn btn-primary'
-              >
+              <button onClick={handleBookingClick} className='btn btn-primary'>
                 <span className='btn-icon' aria-hidden='true'>
                   📅
                 </span>
                 <span>{translations[language].bookCta}</span>
-              </a>
+              </button>
               <button
                 onClick={() => setIsModalOpen(true)}
                 className='btn btn-secondary'
