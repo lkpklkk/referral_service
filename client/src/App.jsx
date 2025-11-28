@@ -27,8 +27,9 @@ const translations = {
     surveyCta: 'Fill Survey',
     referralCta: 'Share',
     bookTitle: 'Book a Lesson',
-    bookDesc: 'Wanna book a lesson or just chat? Click below.',
+    bookDesc: 'Wanna book a lesson? Or chat first? Click below.',
     bookCta: 'Book Now',
+    contactCta: "Let's Chat",
     selectLabel: 'Language',
     modalTitle: 'Contact Me',
     modalDesc: 'Feel free to reach out through any of the channels below:',
@@ -48,6 +49,7 @@ const translations = {
     bookTitle: '滑雪课',
     bookDesc: '预约滑雪课，或者找我聊天嘻嘻，点击下方按钮。',
     bookCta: '立即预约',
+    contactCta: '聊聊先',
     selectLabel: '语言',
     modalTitle: '联系我',
     modalDesc: '可以通过以下方式联系我：',
@@ -537,14 +539,27 @@ function App() {
             <h3>{translations[language].bookTitle}</h3>
             <p>{translations[language].bookDesc}</p>
             <div className='button-row'>
+              <a
+                href={process.env.booking_link || '#'}
+                target='_blank'
+                rel='noopener noreferrer'
+                className='btn btn-primary'
+              >
+                <span className='btn-icon' aria-hidden='true'>
+                  📅
+                </span>
+                <span>{translations[language].bookCta}</span>
+              </a>
               <button
                 onClick={() => setIsModalOpen(true)}
-                className='btn btn-primary'
+                className='btn btn-secondary'
               >
                 <span className='btn-icon' aria-hidden='true'>
                   💬
                 </span>
-                <span>{translations[language].bookCta}</span>
+                <span>
+                  {translations[language].contactCta || 'Contact First'}
+                </span>
               </button>
             </div>
           </GlassCard>
