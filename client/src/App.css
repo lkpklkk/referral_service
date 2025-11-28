@@ -12,21 +12,36 @@
   gap: 1.5rem;
   margin-top: clamp(1rem, 6vw, 3rem);
   text-align: start;
+  position: relative;
 }
 
 .ui-overlay {
-  position: absolute;
-  top: 0.5rem;
-  left: 0.5rem;
+  width: 100%;
+  padding-top: 0.6rem;
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
   z-index: 15;
   pointer-events: none;
+  align-items: flex-start;
+  justify-content: flex-start;
+  align-self: flex-start;
+  box-sizing: border-box;
 }
 
 .ui-overlay > * {
   pointer-events: auto;
+}
+
+.overlay-row {
+  box-sizing: border-box;
+  padding: 0 0.9rem;
+  display: flex;
+  width: 100%;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .version-badge {
@@ -66,7 +81,63 @@
   font-size: 0.85rem;
 }
 
+.gyroscope-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 10px;
+  padding: 0.5rem 0.8rem;
+  backdrop-filter: blur(6px);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.gyroscope-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+.gyroscope-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.gyroscope-icon {
+  font-size: 1.1em;
+  line-height: 1;
+}
+
+.tap-hint-svg {
+  position: absolute;
+  left: -60%;
+  bottom: 35%;
+  width: 100px;
+  max-width: none;
+  transform: rotate(-6deg) scale(0.5);
+  pointer-events: none;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.25));
+  z-index: 10;
+}
+
+.tap-hint-svg-text {
+  position: absolute;
+  font-style: italic;
+  left: -55%;
+  bottom: 60%;
+  font-size: 1.1rem;
+  color: #fff;
+  z-index: 10;
+}
+
 .hero-title {
+  text-align: center;
   margin: 0;
   color: #fff;
   font-size: clamp(2.5rem, 6vw, 4.4rem);
@@ -74,6 +145,8 @@
   line-height: 1.05;
   letter-spacing: -0.5px;
   text-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+  position: relative;
+  z-index: 10;
 }
 
 .hero-line {
@@ -84,12 +157,14 @@
   position: relative;
   display: inline-block;
   padding: 0.15em 0.35em;
+  /* bring back breathing room */
   background: transparent;
   border-radius: 14px;
   color: #fff;
   box-shadow: none;
   overflow: visible;
-  transition: background 0.3s ease, box-shadow 0.3s ease, color 0.3s ease;
+  transition: background 0.3s ease, box-shadow 0.3s ease, color 0.3s ease,
+    transform 0.2s ease;
 }
 
 .hero-highlight::after {
@@ -106,7 +181,8 @@
   z-index: -1;
   pointer-events: none;
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.3s ease, transform 0.2s ease;
+  transform: scale(0.96);
 }
 
 .hero-highlight:hover {
@@ -117,10 +193,12 @@
   );
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
   color: #2b1600;
+  transform: scale(1.04);
 }
 
 .hero-highlight:hover::after {
   opacity: 1;
+  transform: scale(1.02);
 }
 
 .profile-image {
@@ -178,8 +256,39 @@
 }
 
 .action-card p {
+  font-weight: 600;
   margin: 0;
   color: rgba(255, 255, 255, 0.9);
+}
+
+.button-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  width: 100%;
+}
+
+.button-row .btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.button-row .btn-primary {
+  flex: 5;
+}
+
+.button-row .btn-secondary {
+  flex: 5;
+}
+
+.btn-icon {
+  font-size: 1.05em;
+  line-height: 1;
 }
 
 @media (max-width: 768px) {
@@ -193,7 +302,7 @@
   }
 
   .action-card {
-    max-width: 90%;
+    width: 80%;
     padding: 1.25rem 1.35rem;
     gap: 0.9rem;
   }
@@ -228,11 +337,16 @@
   .glass-cards-container {
     gap: 1rem;
   }
+  .button-row {
+    gap: 0.5rem;
+    margin-top: 0.9rem;
+    width: 100%;
+  }
 }
 
 @media (max-width: 480px) {
   .main-content {
-    padding-top: 0.75rem;
+    padding-top: 0.8rem;
     padding-left: 0.5rem;
     padding-right: 0.5rem;
     gap: 0.75rem;
@@ -246,7 +360,7 @@
   }
 
   .hero {
-    gap: 0.65rem;
+    gap: 0.25rem;
     margin-top: 0.35rem;
   }
 
@@ -265,14 +379,15 @@
   }
 
   .glass-cards-container {
-    margin-top: 0.6rem;
+    z-index: 2;
+    margin-top: -3rem;
     gap: 0.65rem;
   }
 
   .action-card {
     max-width: 100%;
     padding: 0.9rem 1rem;
-    gap: 0.5rem;
+    gap: 0.2rem;
   }
 
   .action-card h3 {
@@ -282,7 +397,11 @@
   .action-card p {
     font-size: 0.9rem;
   }
-
+  .button-row {
+    gap: 0.5rem;
+    margin-top: 0.9rem;
+    width: 100%;
+  }
   .btn {
     font-size: 0.92rem;
     padding: 0.62rem 0.95rem;

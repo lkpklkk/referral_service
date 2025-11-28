@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import Papa from 'papaparse';
 import Sticker from './components/Sticker';
@@ -8,6 +8,7 @@ import './App.css';
 
 // Higher value = more subtle parallax movement
 const PARALLAX_FACTOR = 100;
+const PARALLAX_FACTOR_MOBILE = 20; // More sensitive for mobile gyroscope
 const NEAR_THRESHOLD = 0.65;
 const FAR_THRESHOLD = 0.25;
 
@@ -17,31 +18,42 @@ const FORM_URL_CN = import.meta.env.VITE_FORM_URL_CN || '';
 const translations = {
   en: {
     heroLine1: 'Better Techniques',
-    heroLine2: 'Equals',
+    heroLine2: '=',
     heroLine3: '',
     heroLine3Highlight: 'More Fun!',
-    surveyTitle: 'Survey & Referral',
-    surveyDesc: 'Fill out the survey to get the price, or refer a friend!',
+    surveyTitle: 'Survey',
+    surveyDesc:
+      'Share your thoughts and win free lessons + UberEats gift card!',
     surveyCta: 'Fill Survey',
-    referralCta: 'Referral',
+    referralCta: 'Share',
     bookTitle: 'Book a Lesson',
-    bookDesc: 'Ready to hit the slopes? Book your session now.',
+    bookDesc: 'Wanna book a lesson or just chat? Click below.',
     bookCta: 'Book Now',
     selectLabel: 'Language',
+    modalTitle: 'Contact Me',
+    modalDesc: 'Feel free to reach out through any of the channels below:',
+    contactWhatsApp: 'WhatsApp',
+    contactWeChat: 'WeChat',
+    contactXhs: 'Xiaohongshu',
   },
   zh: {
     heroLine1: '好的技术',
-    heroLine2: '等于',
+    heroLine2: '=',
     heroLine3: '滑得',
     heroLine3Highlight: '更开心！',
     surveyTitle: '调查问卷',
     surveyDesc: '有奖调查问卷，填写问卷或推荐好友即可中奖！',
     surveyCta: '填写问卷',
     referralCta: '推荐好友',
-    bookTitle: '预约课程',
-    bookDesc: '准备好突飞猛进？点击下方了解更多并预约课程。',
+    bookTitle: '滑雪课',
+    bookDesc: '预约滑雪课，或者找我聊天嘻嘻，点击下方按钮。',
     bookCta: '立即预约',
     selectLabel: '语言',
+    modalTitle: '联系我',
+    modalDesc: '可以通过以下方式联系我：',
+    contactWhatsApp: 'WhatsApp',
+    contactWeChat: '微信',
+    contactXhs: '小红书',
   },
 };
 
@@ -56,6 +68,31 @@ function App() {
   const [isMobileView, setIsMobileView] = useState(false);
   const [altProfile, setAltProfile] = useState(false);
   const [language, setLanguage] = useState('en');
+  const [gyroscopeEnabled, setGyroscopeEnabled] = useState(false);
+
+  const handleEnableGyroscope = useCallback(async () => {
+    if (gyroscopeEnabled) {
+      setGyroscopeEnabled(false);
+      return;
+    }
+
+    if (typeof window === 'undefined') return;
+    const DeviceOrientation = window.DeviceOrientationEvent;
+
+    if (typeof DeviceOrientation?.requestPermission === 'function') {
+      try {
+        const permission = await DeviceOrientation.requestPermission();
+        if (permission === 'granted') {
+          setGyroscopeEnabled(true);
+        }
+      } catch (error) {
+        console.error('Permission error:', error);
+      }
+    } else {
+      // Non-iOS devices usually don't need permission or don't support the API
+      setGyroscopeEnabled(true);
+    }
+  }, [gyroscopeEnabled]);
 
   const handleSurveyClick = () => {
     const targetUrl = language === 'zh' ? FORM_URL_CN : FORM_URL_EN;
@@ -144,30 +181,48 @@ function App() {
     const generateLayout = () => {
       const newStickers = [];
       const { innerWidth, innerHeight } = window;
-      const isMobileLayout = innerWidth <= 640;
       const safeRect = mainRef.current?.getBoundingClientRect();
 
-      // Calculate density and target count
-      // Base: 25 stickers for 1920x1080 (approx 2M pixels)
+      const EXCLUSION_BUFFER_PX = -50;
+      const STICKER_BASE_WIDTH = 300;
+      const STICKER_BASE_HEIGHT = 300;
+
+      // Calculate sticker count based on screen size
       const pixelArea = innerWidth * innerHeight;
-      console.log(`Window size: ${innerWidth}x${innerHeight}`);
       const baseArea = 1920 * 1080;
-      const ratio = pixelArea / baseArea; // Linear scale factor
+      const ratio = pixelArea / baseArea;
+      const totalStickers = Math.max(10, Math.floor(20 * ratio));
 
-      const totalStickers = Math.max(15, Math.floor(20 * ratio));
-      console.log(
-        `Generating ${totalStickers} stickers for area ${pixelArea} with ratio ${ratio.toFixed(
-          2
-        )}`
-      );
-
-      // Dynamic scale - Increased base size as requested
       const baseScale = Math.max(0.5, Math.min(1.5, ratio * 1.2));
+
+      // Collect exclusion zones for key text elements
+      const exclusionZones = [];
+      const exclusionSelectors = [
+        '.hero-title',
+        '.tap-hint-svg',
+        '.tap-hint-svg-text',
+      ];
+
+      for (const selector of exclusionSelectors) {
+        const element = document.querySelector(selector);
+        if (element) {
+          const rect = element.getBoundingClientRect();
+          const bufferPctX = (EXCLUSION_BUFFER_PX / innerWidth) * 100;
+          const bufferPctY = (EXCLUSION_BUFFER_PX / innerHeight) * 100;
+          exclusionZones.push({
+            xMin: (rect.left / innerWidth) * 100 - bufferPctX,
+            xMax: (rect.right / innerWidth) * 100 + bufferPctX,
+            yMin: (rect.top / innerHeight) * 100 - bufferPctY,
+            yMax: (rect.bottom / innerHeight) * 100 + bufferPctY,
+            name: selector,
+          });
+        }
+      }
 
       // Safe zone based on actual main content size
       const paddingPx = 24; // breathing room around the UI
       let safeZone = null;
-      if (!isMobileLayout) {
+      if (!isMobileView) {
         if (safeRect) {
           const xMin = ((safeRect.left - paddingPx) / innerWidth) * 100;
           const xMax = ((safeRect.right + paddingPx) / innerWidth) * 100;
@@ -194,80 +249,144 @@ function App() {
         }
       }
 
-      // Minimum distance between stickers
-      const minDistance = 18; // Increased slightly
+      // Helper function to check if sticker overlaps with any exclusion zone
+      const overlapsExclusionZone = (x, y, scale) => {
+        // Calculate sticker bounding box in percentage
+        const stickerWidthPct =
+          ((STICKER_BASE_WIDTH * scale) / innerWidth) * 100;
+        const stickerHeightPct =
+          ((STICKER_BASE_HEIGHT * scale) / innerHeight) * 100;
 
+        // Sticker position is at its center (left/top in CSS), so calculate bounds
+        const stickerXMin = x - stickerWidthPct / 2;
+        const stickerXMax = x + stickerWidthPct / 2;
+        const stickerYMin = y - stickerHeightPct / 2;
+        const stickerYMax = y + stickerHeightPct / 2;
+
+        // Check overlap with each exclusion zone
+        for (const zone of exclusionZones) {
+          // AABB (Axis-Aligned Bounding Box) collision detection
+          const overlapsX = stickerXMax > zone.xMin && stickerXMin < zone.xMax;
+          const overlapsY = stickerYMax > zone.yMin && stickerYMin < zone.yMax;
+
+          if (overlapsX && overlapsY) {
+            return true; // Collision detected
+          }
+        }
+        return false;
+      };
+
+      // Grid-based placement with jitter for even distribution
+      const aspectRatio = innerWidth / innerHeight;
+      const gridRows = Math.ceil(Math.sqrt(totalStickers / aspectRatio));
+      const gridCols = Math.ceil(totalStickers / gridRows);
+
+      // Create array of all grid cells
+      const gridCells = [];
+      for (let row = 0; row < gridRows; row++) {
+        for (let col = 0; col < gridCols; col++) {
+          gridCells.push({ row, col });
+        }
+      }
+
+      // Shuffle grid cells for random order
+      for (let i = gridCells.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [gridCells[i], gridCells[j]] = [gridCells[j], gridCells[i]];
+      }
+
+      // Cell dimensions in percentage
+      const cellWidth = 100 / gridCols;
+      const cellHeight = 100 / gridRows;
+
+      const jitterX = cellWidth * 0.5;
+      const jitterY = cellHeight * 0.5;
+
+      let cellIndex = 0; // Track which grid cell we're trying
       for (let i = 0; i < totalStickers; i++) {
         const stickerData = stickers[i % stickers.length];
         let attempts = 0;
         let position = null;
 
-        while (attempts < 100 && !position) {
-          // Keep away from edges (8% - 93%) to prevent clipping
-          var x, y;
-          if (isMobileLayout) {
-            x = Math.random() * 100 - 5;
-            y = Math.random() * 85 + 20;
-          } else {
-            x = Math.random() * 100 - 5;
-            y = Math.random() * 100 - 5;
-          }
+        // Try multiple grid cells if needed
+        while (
+          attempts < gridCells.length &&
+          !position &&
+          cellIndex < gridCells.length
+        ) {
+          const cell = gridCells[cellIndex];
 
-          // 1. Check Safe Zone
-          if (
+          // Calculate cell center
+          const cellCenterX = (cell.col + 0.5) * cellWidth;
+          const cellCenterY = (cell.row + 0.5) * cellHeight;
+
+          // Add jitter (random offset from center)
+          const x = cellCenterX + (Math.random() - 0.5) * jitterX;
+          const y = cellCenterY + (Math.random() - 0.5) * jitterY;
+
+          // Calculate scale for this sticker
+          const stickerScale = baseScale * (0.9 + Math.random() * 0.4);
+
+          // Keep within bounds
+          const inBounds = x >= 0 && x <= 100 && y >= 0 && y <= 100;
+
+          // Check Safe Zone (main content area)
+          const inSafeZone =
             safeZone &&
             x > safeZone.xMin &&
             x < safeZone.xMax &&
             y > safeZone.yMin &&
-            y < safeZone.yMax
-          ) {
+            y < safeZone.yMax;
+
+          // Check overlap with exclusion zones
+          const overlapsExclusion = overlapsExclusionZone(x, y, stickerScale);
+
+          // If this cell works, use it
+          if (inBounds && !inSafeZone && !overlapsExclusion) {
+            // Adjust for top-left corner positioning
+            // Since CSS positions top-left corner, subtract half dimensions to center
+            const stickerWidthPct =
+              ((STICKER_BASE_WIDTH * stickerScale) / innerWidth) * 100;
+            const stickerHeightPct =
+              ((STICKER_BASE_HEIGHT * stickerScale) / innerHeight) * 100;
+
+            const adjustedX = x - stickerWidthPct / 2;
+            const adjustedY = y - stickerHeightPct / 2;
+
+            position = {
+              left: `${adjustedX}%`,
+              top: `${adjustedY}%`,
+              rotation: (Math.random() - 0.5) * 60,
+              scale: stickerScale,
+            };
+          } else {
+            // This cell didn't work, try next cell
+            cellIndex++;
             attempts++;
-            continue;
           }
-
-          // 2. Check Distance to existing stickers
-          let tooClose = false;
-          for (const existing of newStickers) {
-            const dx = existing.leftVal - x;
-            const dy = (existing.topVal - y) * (innerHeight / innerWidth); // Correct for aspect ratio
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist < minDistance) {
-              tooClose = true;
-              break;
-            }
-          }
-
-          if (tooClose) {
-            attempts++;
-            continue;
-          }
-
-          position = {
-            left: `${x}%`,
-            top: `${y}%`,
-            leftVal: x, // Store for distance calc
-            topVal: y,
-            rotation: (Math.random() - 0.5) * 60,
-            scale: baseScale * (0.9 + Math.random() * 0.4), // Increased variation min
-          };
         }
 
         if (position) {
           newStickers.push({ ...stickerData, ...position });
+          cellIndex++; // Move to next cell for next sticker
         }
       }
-      console.log(
-        `Attempted to place ${totalStickers} stickers, placed ${newStickers.length}`
-      );
       setGeneratedStickers(newStickers);
     };
 
     generateLayout();
 
     let timeoutId;
+    let lastWidth = window.innerWidth;
+
     const handleResize = () => {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(generateLayout, 200); // Debounce
+      // On mobile, scrolling can trigger resize due to address bar showing/hiding
+      // Only regenerate if width changes significantly
+      if (window.innerWidth !== lastWidth) {
+        lastWidth = window.innerWidth;
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(generateLayout, 200); // Debounce
+      }
     };
 
     window.addEventListener('resize', handleResize);
@@ -275,25 +394,42 @@ function App() {
       window.removeEventListener('resize', handleResize);
       clearTimeout(timeoutId);
     };
-  }, [stickers]);
+  }, [stickers, isMobileView]);
 
   return (
     <div className='app-container'>
       <div className='ui-overlay'>
-        <div className='version-badge'>v0.1</div>
-        <div className='language-switcher'>
-          <label htmlFor='lang-select'>
-            {translations[language].selectLabel}:
-          </label>
-          <select
-            id='lang-select'
-            value={language}
-            onChange={(e) => setLanguage(e.target.value)}
-          >
-            <option value='en'>EN</option>
-            <option value='zh'>中文</option>
-          </select>
+        <div className='overlay-row'>
+          <div className='language-switcher'>
+            <label htmlFor='lang-select'>
+              {translations[language].selectLabel}:
+            </label>
+            <select
+              id='lang-select'
+              value={language}
+              onChange={(e) => setLanguage(e.target.value)}
+            >
+              <option value='en'>EN</option>
+              <option value='zh'>中文</option>
+            </select>
+          </div>
+          <div className='version-badge'>v0.1 (still a baby)</div>
         </div>
+        {isMobileView && (
+          <div className='overlay-row'>
+            <button
+              className='gyroscope-button'
+              onClick={handleEnableGyroscope}
+            >
+              <span className='gyroscope-icon'>
+                {gyroscopeEnabled ? '📴' : '📱'}
+              </span>
+              <span>
+                {gyroscopeEnabled ? 'Disable Gyroscope' : 'Enable Gyroscope'}
+              </span>
+            </button>
+          </div>
+        )}
       </div>
       {/* Background Stickers */}
       <div className='sticker-layer'>
@@ -306,7 +442,10 @@ function App() {
             initialY={sticker.top}
             rotation={sticker.rotation}
             scale={sticker.scale}
-            parallaxFactor={PARALLAX_FACTOR}
+            parallaxFactor={
+              isMobileView ? PARALLAX_FACTOR_MOBILE : PARALLAX_FACTOR
+            }
+            gyroscopeEnabled={gyroscopeEnabled}
           />
         ))}
       </div>
@@ -318,13 +457,13 @@ function App() {
             <span className='hero-line'>
               {translations[language].heroLine1}
             </span>
-            <span className='hero-line '>
+            <span className='hero-line'>
               {translations[language].heroLine2}
             </span>
             <span className='hero-line'>
-              {translations[language].heroLine3 || ''}
-              <span className=' hero-line hero-highlight'>
-                {translations[language].heroLine3Highlight || ''}
+              {translations[language].heroLine3}
+              <span className='hero-line hero-highlight'>
+                {translations[language].heroLine3Highlight}
               </span>
             </span>
           </h1>
@@ -335,6 +474,17 @@ function App() {
               if (isMobileView) setAltProfile((prev) => !prev);
             }}
           >
+            {isMobileView && (
+              <>
+                <img
+                  className='tap-hint-svg'
+                  src='/Arrow%201.svg'
+                  alt=''
+                  aria-hidden='true'
+                />
+                <span className='tap-hint-svg-text'>click me !</span>
+              </>
+            )}
             <motion.img
               className='profile-img profile-img--base'
               src='/Profile%20pic.png'
@@ -366,12 +516,18 @@ function App() {
           <GlassCard className='action-card'>
             <h3>{translations[language].surveyTitle}</h3>
             <p>{translations[language].surveyDesc}</p>
-            <div className='button-group'>
+            <div className='button-row'>
               <button onClick={handleSurveyClick} className='btn btn-primary'>
-                {translations[language].surveyCta}
+                <span className='btn-icon' aria-hidden='true'>
+                  📝
+                </span>
+                <span>{translations[language].surveyCta}</span>
               </button>
               <a href='/referral' className='btn btn-secondary'>
-                {translations[language].referralCta}
+                <span className='btn-icon' aria-hidden='true'>
+                  🤝
+                </span>
+                <span>{translations[language].referralCta}</span>
               </a>
             </div>
           </GlassCard>
@@ -380,21 +536,27 @@ function App() {
           <GlassCard className='action-card'>
             <h3>{translations[language].bookTitle}</h3>
             <p>{translations[language].bookDesc}</p>
-            <div className='button-group'>
+            <div className='button-row'>
               <button
                 onClick={() => setIsModalOpen(true)}
                 className='btn btn-primary'
               >
-                {translations[language].bookCta}
+                <span className='btn-icon' aria-hidden='true'>
+                  💬
+                </span>
+                <span>{translations[language].bookCta}</span>
               </button>
             </div>
           </GlassCard>
         </div>
+
+        <div className='footer-container' />
       </main>
 
       <ContactModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+        translations={translations[language]}
       />
     </div>
   );

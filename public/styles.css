@@ -54,9 +54,11 @@ body {
 }
 
 .page--gradient {
-  background: linear-gradient(120deg,
-      var(--color-gradient-start),
-      var(--color-gradient-end));
+  background: linear-gradient(
+    120deg,
+    var(--color-gradient-start),
+    var(--color-gradient-end)
+  );
 }
 
 .page--gradient::before,
@@ -73,9 +75,11 @@ body {
 .page--gradient::before {
   width: clamp(18rem, 25vw, 28rem);
   height: clamp(18rem, 25vw, 28rem);
-  background: radial-gradient(circle at top,
-      var(--color-accent-glow),
-      transparent 65%);
+  background: radial-gradient(
+    circle at top,
+    var(--color-accent-glow),
+    transparent 65%
+  );
   top: -8rem;
   left: clamp(-12rem, -15vw, -6rem);
 }
@@ -83,9 +87,11 @@ body {
 .page--gradient::after {
   width: clamp(22rem, 30vw, 34rem);
   height: clamp(22rem, 30vw, 34rem);
-  background: radial-gradient(circle at bottom,
-      var(--color-accent-glow-alt),
-      transparent 60%);
+  background: radial-gradient(
+    circle at bottom,
+    var(--color-accent-glow-alt),
+    transparent 60%
+  );
   bottom: clamp(-10rem, -12vw, -4rem);
   right: clamp(-14rem, -18vw, -6rem);
 }
@@ -201,7 +207,8 @@ select:focus {
 .btn--secondary {
   background: var(--color-surface);
   color: var(--color-primary-dark);
-  border: 1px solid color-mix(in srgb, var(--color-primary-dark) 20%, transparent);
+  border: 1px solid
+    color-mix(in srgb, var(--color-primary-dark) 20%, transparent);
 }
 
 .btn--secondary:hover,
@@ -386,7 +393,6 @@ select:focus {
 }
 
 .modal__content {
-  padding: 1.5rem;
 }
 
 .modal__header {

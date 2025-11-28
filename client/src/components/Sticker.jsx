@@ -9,6 +9,7 @@ export default function Sticker({
   scale = 1,
   rotation = 0,
   parallaxFactor = 1000,
+  gyroscopeEnabled = false,
 }) {
   const [isHovered, setIsHovered] = useState(false);
   const x = useMotionValue(0);
@@ -27,6 +28,9 @@ export default function Sticker({
       y.set(moveY);
     };
 
+    // Detect if device is mobile
+    const isMobile = typeof window !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
     const handleMouseMove = (e) => {
       const { innerWidth, innerHeight } = window;
       const moveX = (e.clientX - innerWidth / 2) / parallaxFactor;
@@ -34,7 +38,6 @@ export default function Sticker({
       updatePosition(moveX, moveY);
     };
 
-    let orientationAttached = false;
     const handleOrientation = (event) => {
       const gamma = Number.isFinite(event.gamma) ? event.gamma : 0; // left-right tilt
       const beta = Number.isFinite(event.beta) ? event.beta : 0; // front-back tilt
@@ -44,37 +47,24 @@ export default function Sticker({
         (clampedGamma / 45) * (window.innerWidth / 2 / parallaxFactor);
       const moveY =
         (clampedBeta / 45) * (window.innerHeight / 2 / parallaxFactor);
+
       updatePosition(moveX, moveY);
     };
 
-    const enableOrientation = async () => {
-      if (typeof window === 'undefined') return;
-      const DeviceOrientation = window.DeviceOrientationEvent;
-      if (!DeviceOrientation) return;
-
-      if (typeof DeviceOrientation.requestPermission === 'function') {
-        try {
-          const permission = await DeviceOrientation.requestPermission();
-          if (permission !== 'granted') return;
-        } catch (_err) {
-          return;
-        }
+    if (isMobile) {
+      if (gyroscopeEnabled) {
+        window.addEventListener('deviceorientation', handleOrientation);
       }
-
-      window.addEventListener('deviceorientation', handleOrientation);
-      orientationAttached = true;
-    };
-
-    enableOrientation();
-    window.addEventListener('mousemove', handleMouseMove);
+    } else {
+      // Desktop: use mouse movement
+      window.addEventListener('mousemove', handleMouseMove);
+    }
 
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
-      if (orientationAttached) {
-        window.removeEventListener('deviceorientation', handleOrientation);
-      }
+      window.removeEventListener('deviceorientation', handleOrientation);
     };
-  }, [x, y, parallaxFactor]);
+  }, [x, y, parallaxFactor, gyroscopeEnabled]);
 
   const handleClick = () => {
     if (link) {
