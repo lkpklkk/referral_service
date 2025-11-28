@@ -540,7 +540,7 @@ function App() {
             <p>{translations[language].bookDesc}</p>
             <div className='button-row'>
               <a
-                href={process.env.booking_link || '#'}
+                href={process.env.PAY_BOOKING_LINK || '#'}
                 target='_blank'
                 rel='noopener noreferrer'
                 className='btn btn-primary'
